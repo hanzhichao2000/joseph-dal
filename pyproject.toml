@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "DAL plugin host: capability protocols, entry-point discovery, strict-local refusal, revision verification."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["joseph-api @ git+https://github.com/hanzhichao2000/joseph-api.git@m3/api-skeleton"]
+dependencies = ["joseph-api @ git+https://github.com/hanzhichao2000/joseph-api.git@2dd66417f4f85325f41fbaef4389448c4810a3d0"]
 license = { text = "Proprietary - license to be decided by the owner" }
 
 [project.optional-dependencies]
