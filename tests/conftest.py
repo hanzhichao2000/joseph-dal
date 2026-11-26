@@ -39,8 +39,10 @@ def fake_entry_points(monkeypatch: pytest.MonkeyPatch):
             def load(self) -> object:
                 return self._obj
 
-        import joseph_dal.host as host
+        from joseph_dal import host
 
-        monkeypatch.setattr(host, "entry_points", lambda group: [_EP(n, o) for n, o in providers.items()])
+        monkeypatch.setattr(
+            host, "entry_points", lambda group: [_EP(n, o) for n, o in providers.items()]
+        )
 
     return _install
