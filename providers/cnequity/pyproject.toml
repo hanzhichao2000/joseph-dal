@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "joseph-dal-cnequity"
+version = "0.1.0"
+description = "cnequity provider plugin for joseph-dal: lake exports become pinned revisions."
+requires-python = ">=3.11"
+dependencies = ["joseph-dal", "joseph-api @ git+https://github.com/hanzhichao2000/joseph-api.git@2dd66417f4f85325f41fbaef4389448c4810a3d0"]
+license = { text = "Proprietary - license to be decided by the owner" }
+
+[project.entry-points."joseph_dal.providers"]
+cnequity = "joseph_dal_cnequity:CnequityProvider"
+
+[tool.setuptools.packages.find]
+where = ["src"]
