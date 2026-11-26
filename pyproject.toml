@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "joseph-dal"
+version = "0.1.0"
+description = "DAL plugin host: capability protocols, entry-point discovery, strict-local refusal, revision verification."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["joseph-api @ git+https://github.com/hanzhichao2000/joseph-api.git@m3/api-skeleton"]
+license = { text = "Proprietary - license to be decided by the owner" }
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+strict = true
+files = ["src/joseph_dal", "providers/cnequity/src/joseph_dal_cnequity"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
