@@ -18,9 +18,6 @@ jobs:
       # The system Python is externally managed (PEP 668); always work in a venv.
       - run: python3 -c "import sys; assert sys.version_info >= (3, 11), sys.version"
       - run: python3 -m venv .venv
-      # joseph-api is private; pip's git clone needs a read token (repo secret
-      # JOSEPH_PRIVATE_READ_TOKEN). Without it the install fails explicitly.
-      - run: git config --global url."https://x-access-token:${{ secrets.JOSEPH_PRIVATE_READ_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - run: .venv/bin/pip install -q -e ".[dev]" -e providers/cnequity
       - run: .venv/bin/ruff check src tests providers
       - run: .venv/bin/ruff format --check src tests providers
