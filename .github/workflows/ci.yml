@@ -16,9 +16,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: pip install -e ".[dev]" -e providers/cnequity
-      - run: ruff check src tests providers
-      - run: ruff format --check src tests providers
-      - run: mypy
-      - run: pytest -q
-
+      # The self-hosted runner's Python is externally managed (PEP 668); always work in a venv.
+      - run: python -m venv .venv
+      - run: .venv/bin/pip install -q -e ".[dev]" -e providers/cnequity
+      - run: .venv/bin/ruff check src tests providers
+      - run: .venv/bin/ruff format --check src tests providers
+      - run: .venv/bin/mypy
+      - run: .venv/bin/pytest -q
