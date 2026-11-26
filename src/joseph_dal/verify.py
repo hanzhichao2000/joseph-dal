@@ -10,15 +10,10 @@ from joseph_api import RevisionRecord
 
 from joseph_dal.exceptions import RevisionVerificationError
 
-_CHUNK = 1 << 20
-
-
 def _digest(path: Path) -> str:
-    h = hashlib.sha256()
+    """hashlib.file_digest: C-implemented, constant memory, no Python chunk loop (3.11+)."""
     with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(_CHUNK), b""):
-            h.update(chunk)
-    return h.hexdigest()
+        return hashlib.file_digest(fh, "sha256").hexdigest()
 
 
 def verify_revision(root: Path, record: RevisionRecord) -> None:
