@@ -4,8 +4,8 @@ import shutil
 from pathlib import Path
 
 import pytest
-
 from joseph_api import RevisionFile, RevisionRecord
+
 from joseph_dal import RevisionVerificationError, verify_revision
 
 

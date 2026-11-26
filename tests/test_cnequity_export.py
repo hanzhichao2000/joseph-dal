@@ -4,9 +4,10 @@ import stat
 from datetime import date
 from pathlib import Path
 
+from joseph_dal_cnequity import CnequityProvider, load_receipt
+
 from joseph_dal import verify_revision
 from joseph_dal.protocols import Window
-from joseph_dal_cnequity import CnequityProvider, load_receipt
 
 
 def _fake_cne(tmp_path: Path) -> str:

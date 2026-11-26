@@ -21,7 +21,7 @@ def discover_providers(group: str = PROVIDER_ENTRY_POINT_GROUP) -> dict[str, Dat
     for ep in eps:
         try:
             obj = ep.load()
-        except Exception as exc:  # noqa: BLE001 - report the entry point, not the traceback
+        except Exception as exc:
             raise ProviderDiscoveryError(f"entry point {ep.name!r} failed to load: {exc}") from exc
         if isinstance(obj, type):
             obj = obj()

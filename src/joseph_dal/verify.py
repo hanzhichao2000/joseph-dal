@@ -10,6 +10,7 @@ from joseph_api import RevisionRecord
 
 from joseph_dal.exceptions import RevisionVerificationError
 
+
 def _digest(path: Path) -> str:
     """hashlib.file_digest: C-implemented, constant memory, no Python chunk loop (3.11+)."""
     with path.open("rb") as fh:

@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from joseph_api import RevisionFile, RevisionRecord
 
 from joseph_dal import LiveTransportRefused, admit, discover_providers, locate
-from joseph_api import RevisionFile, RevisionRecord
 
 
 def test_discovery_via_entry_points(fake_entry_points, fake_provider):

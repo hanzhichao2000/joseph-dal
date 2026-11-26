@@ -12,7 +12,7 @@ dependencies = ["joseph-api @ git+https://github.com/hanzhichao2000/joseph-api.g
 license = { text = "Proprietary - license to be decided by the owner" }
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+dev = ["pytest>=8", "ruff==0.17.6", "mypy==2.4.1"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -13,25 +13,25 @@ from joseph_dal.protocols import (
     DataProvider,
     Preflight,
     ReadPolicy,
-    RevisionLocator,
     ReplayPolicy,
+    RevisionLocator,
     Transport,
     Window,
 )
 from joseph_dal.verify import verify_revision
 
 __all__ = [
+    "PROVIDER_ENTRY_POINT_GROUP",
     "CapabilityDeclaration",
     "DalHostError",
     "DataProvider",
     "LiveTransportRefused",
     "Preflight",
-    "PROVIDER_ENTRY_POINT_GROUP",
     "ProviderDiscoveryError",
     "ReadPolicy",
+    "ReplayPolicy",
     "RevisionLocator",
     "RevisionVerificationError",
-    "ReplayPolicy",
     "Transport",
     "Window",
     "admit",

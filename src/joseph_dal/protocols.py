@@ -9,9 +9,8 @@ from datetime import date
 from pathlib import Path
 from typing import Literal, Protocol, runtime_checkable
 
-from pydantic import BaseModel, ConfigDict
-
 from joseph_api import RevisionRecord
+from pydantic import BaseModel, ConfigDict
 
 ReadPolicy = Literal["live", "strict_local", "local_first"]
 Transport = Literal["live", "file"]
