@@ -11,15 +11,16 @@ from joseph_api import RevisionFile, RevisionRecord, RevisionWindow
 
 from joseph_dal.protocols import CapabilityDeclaration, ReplayPolicy, Transport, Window
 
-_DATASETS: dict[str, str] = {
-    "instruments": "core",
-    "index_constituents": "core",
-    "index_bars": "core",
-    "daily_bars": "core",
-    "futures_bars": "optional",
-    "futures_contracts": "optional",
-    "option_contracts": "optional",
-    "option_bars": "optional",
+# dataset -> (layer, has_date_column). Datasets without a date column export without a window.
+_DATASETS: dict[str, tuple[str, bool]] = {
+    "instruments": ("core", False),
+    "index_constituents": ("core", False),
+    "index_bars": ("core", True),
+    "daily_bars": ("core", True),
+    "futures_bars": ("optional", True),
+    "futures_contracts": ("optional", False),
+    "option_contracts": ("optional", False),
+    "option_bars": ("optional", True),
 }
 _SCHEMA_VERSION = "cne-contract-0.25.0"
 
@@ -54,27 +55,22 @@ class CnequityProvider:
             for ds in _DATASETS
         )
 
-    def export(self, capability: str, window: Window, out_dir: Path) -> RevisionRecord:
+    def export(self, capability: str, window: Window | None, out_dir: Path) -> RevisionRecord:
         if capability not in _DATASETS:
             raise ValueError(f"unknown cnequity dataset {capability!r}")
+        _, has_date = _DATASETS[capability]
+        if has_date and window is None:
+            raise ValueError(f"{capability!r} is dated; a window is required")
         out_dir.mkdir(parents=True, exist_ok=True)
-        subprocess.run(
-            [
-                self._cne_bin,
-                "storage",
-                "export",
-                "--out",
-                str(out_dir),
-                "--start",
-                window.start.isoformat(),
-                "--end",
-                window.end.isoformat(),
-                capability,
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
+        cmd = [self._cne_bin, "storage", "export", "--out", str(out_dir)]
+        if has_date and window is not None:
+            cmd += ["--start", window.start.isoformat(), "--end", window.end.isoformat()]
+        cmd.append(capability)
+        # The lake writes no sidecar file: the receipt (rows, files, bytes, revision_id,
+        # snapshot) is the JSON document printed on stdout.
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        report = json.loads(proc.stdout[proc.stdout.index("{") :])
+        exported = next(e for e in report["exported"] if e["dataset"] == capability)
         dataset_dir = out_dir / capability
         files = tuple(
             RevisionFile(
@@ -93,10 +89,10 @@ class CnequityProvider:
             capability_id=capability,
             schema_version=_SCHEMA_VERSION,
             source=source,
-            revision_id=f"{capability}:{window.start}:{window.end}:{digest[:12]}",
+            revision_id=f"{capability}@lake:{exported['revision_id']}",
             content_digest=digest,
             files=files,
-            window=RevisionWindow(start=window.start, end=window.end),
+            window=RevisionWindow(start=window.start, end=window.end) if window else None,
         )
         (out_dir / f"{capability}.revision.json").write_text(record.to_json(), encoding="utf-8")
         return record
