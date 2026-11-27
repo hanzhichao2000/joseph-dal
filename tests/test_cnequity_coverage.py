@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 from pathlib import Path
 
@@ -58,6 +59,37 @@ def test_window_from_coverage_start_is_accepted(cne: LakeConfigurer, tmp_path: P
     record = provider.export("option_bars", window, tmp_path)
     assert record.window is not None and record.window.start == COVERAGE_START
     verify_revision(tmp_path, record)
+
+
+@pytest.mark.parametrize("dataset", ["option_bars", "option_greeks"])
+def test_prefix_is_declared_unverified_in_revision_receipt(
+    cne: LakeConfigurer, tmp_path: Path, dataset: str
+) -> None:
+    lake = default_lake()
+    lake["calendar"]["first"] = "2023-11-26"
+    provider = CnequityProvider(cne_bin=cne(lake))
+    record = provider.export(
+        dataset, Window(start=date(2023, 11, 1), end=date(2026, 11, 26)), tmp_path
+    )
+    declaration = next(f for f in record.files if f.path.endswith(".coverage.json"))
+    assert json.loads((tmp_path / declaration.path).read_text()) == {
+        "calendar_unverified": {"start": "2023-11-01", "end": "2023-11-25"}
+    }
+    assert record.to_json() == (tmp_path / f"{dataset}.revision.json").read_text()
+    verify_revision(tmp_path, record)
+
+
+def test_calendar_gap_after_unverified_prefix_is_refused(
+    cne: LakeConfigurer, tmp_path: Path
+) -> None:
+    lake = default_lake()
+    lake["calendar"]["first"] = "2023-11-26"
+    lake["calendar"]["holes"] = ["2023-12-05"]
+    provider = CnequityProvider(cne_bin=cne(lake))
+    with pytest.raises(ValueError, match=r"calendar.*2023-12-05"):
+        provider.export(
+            "option_bars", Window(start=date(2023, 11, 1), end=date(2023, 12, 29)), tmp_path
+        )
 
 
 def test_snapshot_only_refuses_a_window_before_any_lake_call(
