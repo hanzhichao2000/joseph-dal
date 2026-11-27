@@ -33,6 +33,8 @@ class CapabilityDeclaration(BaseModel):
     source: str
     history_mode: Literal["by_date", "snapshot_with_backfill", "snapshot_only"]
     window_limits: Window | None = None
+    coverage_start: date | None = None
+    derived_from: tuple[str, ...] | None = None
 
 
 @runtime_checkable

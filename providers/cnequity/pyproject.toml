@@ -7,7 +7,7 @@ name = "joseph-dal-cnequity"
 version = "0.1.0"
 description = "cnequity provider plugin for joseph-dal: lake exports become pinned revisions."
 requires-python = ">=3.11"
-dependencies = ["joseph-dal", "joseph-api @ git+https://github.com/hanzhichao2000/joseph-api.git@2dd66417f4f85325f41fbaef4389448c4810a3d0"]
+dependencies = ["joseph-dal", "joseph-api @ git+https://github.com/hanzhichao2000/joseph-api.git@2dd66417f4f85325f41fbaef4389448c4810a3d0", "pyarrow>=17"]
 license = { text = "Proprietary - license to be decided by the owner" }
 
 [project.entry-points."joseph_dal.providers"]

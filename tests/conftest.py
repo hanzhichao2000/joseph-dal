@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import json
+import subprocess
 from pathlib import Path
+from typing import Any
 
 import pytest
+from fake_cne import COVERAGE_START, LakeConfigurer, default_lake, install_fake_cne
 
 
 class FakeProvider:
@@ -46,3 +50,32 @@ def fake_entry_points(monkeypatch: pytest.MonkeyPatch):
         )
 
     return _install
+
+
+@pytest.fixture
+def cne(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> LakeConfigurer:
+    """Install the fake `cne`; the returned function configures the lake it serves."""
+    path = install_fake_cne(tmp_path)
+
+    def _configure(lake: dict[str, Any]) -> str:
+        monkeypatch.setenv("FAKE_CNE_LAKE", json.dumps(lake))
+        return path
+
+    return _configure
+
+
+@pytest.fixture
+def lake_calls(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
+    """Every lake CLI call the provider makes."""
+    calls: list[list[str]] = []
+    real = subprocess.run
+
+    def _run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:  # type: ignore[type-arg]
+        calls.append(cmd)
+        return real(cmd, **kwargs)
+
+    monkeypatch.setattr("joseph_dal_cnequity.subprocess.run", _run)
+    return calls
+
+
+__all__ = ["COVERAGE_START", "LakeConfigurer", "default_lake", "fake_entry_points", "fake_provider"]
