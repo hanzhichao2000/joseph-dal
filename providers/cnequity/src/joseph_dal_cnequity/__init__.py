@@ -42,9 +42,9 @@ class DatasetSpec:
     derived_from: tuple[str, ...] | None = None
 
 
-# dataset -> (history mode, coverage start, derived from). `coverage_start` is the lake calendar's
-# first date where it applies: every trading day of an accepted window can then be checked.
-# The calendar itself declares that start as well as option_bars and option_greeks.
+# dataset -> (history mode, coverage start, derived from). `coverage_start` is the first date
+# the lake actually holds for that dataset: option_bars and option_greeks start 2023-11-01,
+# while trading_calendar itself starts 2023-11-26. An accepted window can then be checked.
 _DATASETS: dict[str, DatasetSpec] = {
     "instruments": DatasetSpec("snapshot_only"),
     "index_constituents": DatasetSpec("snapshot_with_backfill"),
@@ -53,10 +53,10 @@ _DATASETS: dict[str, DatasetSpec] = {
     "futures_bars": DatasetSpec("by_date"),
     "futures_contracts": DatasetSpec("snapshot_only"),
     "option_contracts": DatasetSpec("snapshot_only"),
-    "option_bars": DatasetSpec("by_date", coverage_start=date(2023, 11, 26)),
+    "option_bars": DatasetSpec("by_date", coverage_start=date(2023, 11, 1)),
     "option_greeks": DatasetSpec(
         "by_date",
-        coverage_start=date(2023, 11, 26),
+        coverage_start=date(2023, 11, 1),
         derived_from=("option_bars", "option_contracts"),
     ),
     _CALENDAR: DatasetSpec("by_date", coverage_start=date(2023, 11, 26)),
