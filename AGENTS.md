@@ -41,13 +41,18 @@ PYTHON
 ```
 
 Both `pyproject.toml` and `providers/cnequity/pyproject.toml` pin `joseph-api` to a full,
-immutable Git commit SHA. Update both together when changing the pin. The current pin is
+immutable Git commit SHA. Update both files together using the same SHA. The current pin is
 `2dd66417f4f85325f41fbaef4389448c4810a3d0`.
+When this repository needs new API behavior, such as the option-row DTOs from
+[joseph-api PR #10](https://github.com/hanzhichao2000/joseph-api/pull/10),
+update the pin after the API PR merges, using the full SHA of the merged commit.
 
 ## Public contributions
 
 - Use `codex/<topic>-<issue number>` for the branch. Keep planning and coordination in the owning internal
   issue. Public PRs require approval from a private-project lead.
+- In `joseph-docs-public` only, add new public-layer Markdown files to `public-layer.allow`
+  in the same PR and keep each file at or below 200 lines.
 - Scan public changes for vendor names, private paths and URLs, credentials, and proprietary
   strategy identifiers. Keep internal roadmap details and evidence out of public files and PR text.
 - Record verification commands, results, exact repository SHAs, and CI run links in the owning
