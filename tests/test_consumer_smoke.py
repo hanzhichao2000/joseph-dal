@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from datetime import date
+from hashlib import sha256
 from pathlib import Path
 
+import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 from fake_cne import default_lake
-from joseph_api import RevisionRecord
+from joseph_api import RevisionFile, RevisionRecord, RevisionWindow
 
 from joseph_dal import LiveTransportRefused, admit, discover_providers, verify_revision
 
@@ -32,7 +34,7 @@ def test_discovered_option_declarations(cne, monkeypatch):
         admit(provider, "strict_local")
 
 
-def test_recorded_receipt_reads_only_parquet_without_provider(monkeypatch):
+def test_recorded_receipt_reads_only_parquet_without_provider(monkeypatch, tmp_path):
     root = Path(__file__).parent / "fixtures" / "option-revision"
     record = RevisionRecord.from_json((root / "option_bars.revision.json").read_text())
 
@@ -50,3 +52,36 @@ def test_recorded_receipt_reads_only_parquet_without_provider(monkeypatch):
     assert len(tables) == 1
     assert tables[0].column("symbol").to_pylist() == ["X"]
     assert any(item.path.endswith(".coverage.json") for item in record.files)
+
+    second_root = tmp_path / "second"
+    second_root.mkdir()
+    parquet = second_root / "part.parquet"
+    pq.write_table(pa.table({"symbol": ["Y"], "trade_date": [date(2024, 1, 2)]}), parquet)
+    files = (
+        RevisionFile(
+            path=parquet.name,
+            digest=sha256(parquet.read_bytes()).hexdigest(),
+            size=parquet.stat().st_size,
+        ),
+    )
+    second = RevisionRecord(
+        capability_id=record.capability_id,
+        schema_version=record.schema_version,
+        source=record.source,
+        revision_id=record.revision_id,
+        window=RevisionWindow(start=date(2024, 1, 2), end=date(2024, 1, 2)),
+        files=files,
+        content_digest=RevisionRecord.compute_content_digest(
+            record.capability_id, record.schema_version, record.source, files
+        ),
+    )
+    (second_root / "option_bars.revision.json").write_text(second.to_json())
+    second = RevisionRecord.from_json((second_root / "option_bars.revision.json").read_text())
+    assert (
+        record.revision_id
+        == second.revision_id
+        == "option_bars@lake:dd97f8582206451f831c53f4cc6afce2"
+    )
+    assert record.window != second.window and record.content_digest != second.content_digest
+    verify_revision(second_root, second)
+    assert pq.read_table(second_root / second.files[0].path).column("symbol").to_pylist() == ["Y"]
