@@ -118,7 +118,7 @@ def install_fake_cne(tmp_path: Path) -> str:
     return str(script)
 
 
-COVERAGE_START = date(2023, 11, 26)
+COVERAGE_START = date(2023, 11, 1)
 HOLIDAYS = {date(2024, 1, 1)}
 
 

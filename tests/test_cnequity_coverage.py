@@ -18,8 +18,8 @@ DATASET_EXPECTATIONS = (
     ("futures_bars", "by_date", None, None),
     ("futures_contracts", "snapshot_only", None, None),
     ("option_contracts", "snapshot_only", None, None),
-    ("option_bars", "by_date", date(2023, 11, 26), None),
-    ("option_greeks", "by_date", date(2023, 11, 26), ("option_bars", "option_contracts")),
+    ("option_bars", "by_date", date(2023, 11, 1), None),
+    ("option_greeks", "by_date", date(2023, 11, 1), ("option_bars", "option_contracts")),
     ("trading_calendar", "by_date", date(2023, 11, 26), None),
 )
 
@@ -45,9 +45,9 @@ def test_window_before_coverage_start_is_refused_before_any_lake_call(
     cne: LakeConfigurer, lake_calls: list[list[str]], tmp_path: Path
 ) -> None:
     provider = CnequityProvider(cne_bin=cne(default_lake()))
-    with pytest.raises(ValueError, match="2023-11-26"):
+    with pytest.raises(ValueError, match="2023-11-01"):
         provider.export(
-            "option_bars", Window(start=date(2023, 11, 1), end=date(2023, 12, 29)), tmp_path
+            "option_bars", Window(start=date(2023, 10, 1), end=date(2023, 12, 29)), tmp_path
         )
     assert lake_calls == []
 
