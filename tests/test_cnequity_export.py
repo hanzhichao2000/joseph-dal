@@ -1,73 +1,53 @@
 from __future__ import annotations
 
-import stat
 from datetime import date
 from pathlib import Path
 
+import pytest
+from fake_cne import COVERAGE_START, LakeConfigurer, default_lake
 from joseph_dal_cnequity import CnequityProvider, load_receipt
 
 from joseph_dal import verify_revision
 from joseph_dal.protocols import Window
 
 
-def _fake_cne(tmp_path: Path) -> str:
-    """A fake `cne`: --version, and `storage export` that writes one parquet and prints the receipt JSON."""
-    script = tmp_path / "cne"
-    script.write_text(
-        """#!/usr/bin/env bash
-if [ "$1" = "--version" ]; then echo "cne, version 0.25.0"; exit 0; fi
-out=""; start=""; end=""; ds=""; shift 2   # skip "storage export"
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --out) out="$2"; shift 2;;
-    --start) start="$2"; shift 2;;
-    --end) end="$2"; shift 2;;
-    *) ds="$1"; shift;;
-  esac
-done
-mkdir -p "$out/$ds"
-printf "PARquet-%s-%s-%s" "$ds" "$start" "$end" > "$out/$ds/part-0.parquet"
-printf '{"exported":[{"dataset":"%s","rows":1,"files":1,"bytes":20,"revision_id":"fake0001","snapshot":1,"path":"%s/%s"}]}\n' "$ds" "$out" "$ds"
-""",
-        encoding="utf-8",
-    )
-    script.chmod(script.stat().st_mode | stat.S_IXUSR)
-    return str(script)
-
-
-def test_export_produces_verifiable_revision(tmp_path: Path):
-    cne = _fake_cne(tmp_path)
-    provider = CnequityProvider(cne_bin=cne)
+def test_export_produces_verifiable_revision(cne: LakeConfigurer, tmp_path: Path) -> None:
+    provider = CnequityProvider(cne_bin=cne(default_lake()))
     out = tmp_path / "out"
-    rec = provider.export("option_bars", Window(start=date(2024, 1, 1), end=date(2024, 3, 31)), out)
+    rec = provider.export("option_bars", Window(start=date(2024, 1, 2), end=date(2024, 3, 29)), out)
     assert rec.source == "cnequity@0.25.0"
-    assert {f.path for f in rec.files} == {"option_bars/part-0.parquet"}
+    assert {f.path for f in rec.files} == {
+        "option_bars/year=2024/month=1/data_0.parquet",
+        "option_bars/year=2024/month=2/data_0.parquet",
+        "option_bars/year=2024/month=3/data_0.parquet",
+    }
     assert all(not p.startswith("/") for p in (f.path for f in rec.files))
     verify_revision(out, rec)
     assert load_receipt(out / "option_bars.revision.json") == rec
-    assert rec.revision_id == "option_bars@lake:fake0001"
+    assert rec.revision_id == "option_bars@lake:dd97f8582206451f831c53f4cc6afce2"
 
 
-def test_undated_dataset_exports_without_window(tmp_path: Path):
-    cne = _fake_cne(tmp_path)
-    provider = CnequityProvider(cne_bin=cne)
+def test_undated_dataset_exports_without_window(cne: LakeConfigurer, tmp_path: Path) -> None:
+    provider = CnequityProvider(cne_bin=cne(default_lake()))
     out = tmp_path / "out2"
     rec = provider.export("option_contracts", None, out)
-    assert rec.window is None and rec.revision_id == "option_contracts@lake:fake0001"
+    assert (
+        rec.window is None
+        and rec.revision_id == "option_contracts@lake:dd97f8582206451f831c53f4cc6afce2"
+    )
     verify_revision(out, rec)
 
 
-def test_dated_dataset_requires_a_window(tmp_path: Path):
-    provider = CnequityProvider(cne_bin=_fake_cne(tmp_path))
-    import pytest
-
-    with pytest.raises(ValueError):
+def test_dated_dataset_requires_a_window(cne: LakeConfigurer, tmp_path: Path) -> None:
+    provider = CnequityProvider(cne_bin=cne(default_lake()))
+    with pytest.raises(ValueError, match="window is required"):
         provider.export("option_bars", None, tmp_path / "out3")
 
 
-def test_capabilities_declare_source_and_history_mode(tmp_path: Path):
-    provider = CnequityProvider(cne_bin=_fake_cne(tmp_path))
+def test_capabilities_declare_source_and_history_mode(cne: LakeConfigurer) -> None:
+    provider = CnequityProvider(cne_bin=cne(default_lake()))
     caps = {c.capability_id: c for c in provider.capabilities}
     assert caps["option_bars"].source == "cnequity@0.25.0"
     assert caps["option_bars"].history_mode == "by_date"
+    assert caps["option_bars"].coverage_start == COVERAGE_START
     assert provider.replay_policy == "idempotent_refetch"
