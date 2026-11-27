@@ -1,13 +1,10 @@
 """cnequity provider: shells out to the lake CLI (never imports cnequity) and returns a revision.
 
-Every dataset is declared with the history mode its export path really supports, a coverage
-start where the lake's calendar can verify it, and the datasets it is derived from. For a dataset
-with a coverage start, a windowed export is fail-closed: refused before any lake call when it
-starts before the coverage start, and refused after export when the calendar does not cover the
-window or any trading day in it is absent from the written files. Sparse datasets (month-end
-snapshots) carry no coverage start and make no coverage claim. A receipt's window records the
-request, not a completeness guarantee: a month-end snapshot export may contain only the final
-month-end even when the request spans multiple months.
+Every dataset declares its history mode, data start, and derivation. A window before its data
+start is refused. A prefix before the actual calendar start is calendar_unverified: it is not
+calendar checked and carries no coverage promise. The remaining window is fail-closed on missing
+calendar dates or trading dates. Sparse datasets carry no coverage start or completeness claim.
+A receipt's window records the request, not a completeness guarantee.
 """
 
 from __future__ import annotations
@@ -44,7 +41,7 @@ class DatasetSpec:
 
 # dataset -> (history mode, coverage start, derived from). `coverage_start` is the first date
 # the lake actually holds for that dataset: option_bars and option_greeks start 2023-11-01,
-# while trading_calendar itself starts 2023-11-26. An accepted window can then be checked.
+# while trading_calendar itself starts 2023-11-26. Earlier dates are not calendar-verified.
 _DATASETS: dict[str, DatasetSpec] = {
     "instruments": DatasetSpec("snapshot_only"),
     "index_constituents": DatasetSpec("snapshot_with_backfill"),
@@ -147,6 +144,21 @@ class CnequityProvider:
         )
         if not files:
             raise RuntimeError(f"cne storage export wrote no files for {capability!r}")
+        unverified = None
+        if window is not None and spec.coverage_start is not None:
+            unverified = self._check_coverage(capability, window, files, out_dir)
+        if unverified is not None:
+            declaration = out_dir / f"{capability}.coverage.json"
+            declaration.write_text(
+                json.dumps({"calendar_unverified": {
+                    "start": unverified.start.isoformat(), "end": unverified.end.isoformat()
+                }}, sort_keys=True), encoding="utf-8"
+            )
+            files += (RevisionFile(
+                path=declaration.relative_to(out_dir).as_posix(),
+                digest=hashlib.sha256(declaration.read_bytes()).hexdigest(),
+                size=declaration.stat().st_size,
+            ),)
         source = f"cnequity@{self._version()}"
         digest = RevisionRecord.compute_content_digest(capability, _SCHEMA_VERSION, source, files)
         record = RevisionRecord(
@@ -158,21 +170,31 @@ class CnequityProvider:
             files=files,
             window=RevisionWindow(start=window.start, end=window.end) if window else None,
         )
-        if window is not None and spec.coverage_start is not None:
-            self._check_coverage(capability, window, record, out_dir)
         (out_dir / f"{capability}.revision.json").write_text(record.to_json(), encoding="utf-8")
         return record
 
     def _check_coverage(
-        self, capability: str, window: Window, record: RevisionRecord, out_dir: Path
-    ) -> None:
-        """Fail closed unless the calendar vouches for the window and every trading day in it is
-        in the written files. Footer min/max is a cheap bounds pre-check; the distinct dates are
-        always read from the date column, because min/max cannot show a day missing in the middle."""
-        with self._temporary_calendar(window) as calendar_dir:
+        self, capability: str, window: Window, files: tuple[RevisionFile, ...], out_dir: Path
+    ) -> Window | None:
+        """The prefix before the actual calendar start is unverified and makes no coverage claim.
+
+        Fail closed for missing calendar or trading dates in the remaining window. Read distinct
+        dates, since footer bounds cannot reveal a missing day in the middle.
+        """
+        with self._temporary_calendar() as calendar_dir:
             calendar = _read_calendar(calendar_dir)
+        if not calendar:
+            raise CoverageError(f"{capability}: the source calendar is empty")
+        calendar_start = min(calendar)
+        checked_start = max(window.start, calendar_start)
+        unverified = (
+            Window(start=window.start, end=min(window.end, calendar_start - timedelta(days=1)))
+            if window.start < calendar_start else None
+        )
+        if checked_start > window.end:
+            return unverified
         calendar_days = set(calendar)
-        uncovered = sorted(_dates_between(window.start, window.end) - calendar_days)
+        uncovered = sorted(_dates_between(checked_start, window.end) - calendar_days)
         if uncovered:
             last = max(calendar_days) if calendar_days else None
             raise CoverageError(
@@ -183,7 +205,7 @@ class CnequityProvider:
             day for day in calendar if calendar[day] and window.start <= day <= window.end
         }
         present: set[date] = set()
-        for entry in record.files:
+        for entry in files:
             path = out_dir / entry.path
             _bounds_precheck(capability, entry.path, path, window)
             present |= set(pq.read_table(path, columns=[_DATE_COLUMN]).column(0).to_pylist())
@@ -194,13 +216,13 @@ class CnequityProvider:
                 f"{capability}: the export does not cover the window: first missing trading day "
                 f"{missing[0]}, last date in the files {last}"
             )
+        return unverified
 
     @contextmanager
-    def _temporary_calendar(self, window: Window) -> Iterator[Path]:
-        """The lake's trading calendar for the window, exported to a directory that does not outlive
-        the check."""
+    def _temporary_calendar(self) -> Iterator[Path]:
+        """Export the lake's full calendar to determine its actual bounds."""
         with tempfile.TemporaryDirectory() as tmp:
-            self._export_raw(Path(tmp), window, [_CALENDAR])
+            self._export_raw(Path(tmp), None, [_CALENDAR])
             yield Path(tmp) / _CALENDAR
 
     def locate(self, record: RevisionRecord, root: Path) -> Path:

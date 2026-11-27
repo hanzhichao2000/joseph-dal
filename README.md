@@ -13,6 +13,16 @@ Routes (Project `joseph-build` #6):
 - **A (QT5m):** 5-minute futures bars by contract (akshare/Sina) and CFE daily/contracts
   (cnequity).
 
+For cnequity datasets with a declared coverage start, that date is the source data start, not
+an assurance that the calendar verifies all subsequent data. When an export begins before the
+trading calendar's actual start, the revision lists a digest-protected `<capability>.coverage.json`
+file containing `calendar_unverified: {start, end}` for the inclusive prefix. This is a declarative
+quality downgrade, not an exemption or a completeness claim: consumers must not treat that prefix
+as calendar-verified or covered. Remaining dates require a calendar row for every calendar day and
+an exported row for every trading day; missing dates or a window beyond the calendar end are refused.
+A window entirely before the calendar start is wholly unverified. The declaration records the
+calendar's known start, not a measurement of data completeness in the prefix.
+
 Boundaries:
 
 - The host imports no provider plugin; providers are discovered by entry points.
