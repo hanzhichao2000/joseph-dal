@@ -5,7 +5,9 @@ start where the lake's calendar can verify it, and the datasets it is derived fr
 with a coverage start, a windowed export is fail-closed: refused before any lake call when it
 starts before the coverage start, and refused after export when the calendar does not cover the
 window or any trading day in it is absent from the written files. Sparse datasets (month-end
-snapshots) carry no coverage start and make no coverage claim.
+snapshots) carry no coverage start and make no coverage claim. A receipt's window records the
+request, not a completeness guarantee: a month-end snapshot export may contain only the final
+month-end even when the request spans multiple months.
 """
 
 from __future__ import annotations
@@ -42,6 +44,7 @@ class DatasetSpec:
 
 # dataset -> (history mode, coverage start, derived from). `coverage_start` is the lake calendar's
 # first date where it applies: every trading day of an accepted window can then be checked.
+# The calendar itself declares that start as well as option_bars and option_greeks.
 _DATASETS: dict[str, DatasetSpec] = {
     "instruments": DatasetSpec("snapshot_only"),
     "index_constituents": DatasetSpec("snapshot_with_backfill"),

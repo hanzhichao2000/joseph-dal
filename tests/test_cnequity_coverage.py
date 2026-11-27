@@ -10,23 +10,35 @@ from joseph_dal_cnequity import CnequityProvider
 from joseph_dal import verify_revision
 from joseph_dal.protocols import Window
 
+DATASET_EXPECTATIONS = (
+    ("instruments", "snapshot_only", None, None),
+    ("index_constituents", "snapshot_with_backfill", None, None),
+    ("index_bars", "by_date", None, None),
+    ("daily_bars", "by_date", None, None),
+    ("futures_bars", "by_date", None, None),
+    ("futures_contracts", "snapshot_only", None, None),
+    ("option_contracts", "snapshot_only", None, None),
+    ("option_bars", "by_date", date(2023, 11, 26), None),
+    ("option_greeks", "by_date", date(2023, 11, 26), ("option_bars", "option_contracts")),
+    ("trading_calendar", "by_date", date(2023, 11, 26), None),
+)
 
+
+@pytest.mark.parametrize("name,mode,start,derived", DATASET_EXPECTATIONS)
 def test_dataset_table_pins_modes_coverage_and_derivation(
     cne: LakeConfigurer,
+    name: str,
+    mode: str,
+    start: date | None,
+    derived: tuple[str, ...] | None,
 ) -> None:
     provider = CnequityProvider(cne_bin=cne(default_lake()))
     caps = {c.capability_id: c for c in provider.capabilities}
-    assert caps["option_bars"].history_mode == "by_date"
-    assert caps["option_greeks"].history_mode == "by_date"
-    assert caps["index_constituents"].history_mode == "snapshot_with_backfill"
-    for name in ("option_contracts", "futures_contracts", "instruments"):
-        assert caps[name].history_mode == "snapshot_only", name
-    assert caps["option_bars"].coverage_start == COVERAGE_START
-    assert caps["option_greeks"].coverage_start == COVERAGE_START
-    assert caps["index_constituents"].coverage_start is None
-    assert caps["option_greeks"].derived_from == ("option_bars", "option_contracts")
-    assert caps["option_bars"].derived_from is None
-    assert all(c.window_limits is None for c in caps.values())
+    assert set(caps) == {row[0] for row in DATASET_EXPECTATIONS}
+    assert caps[name].history_mode == mode
+    assert caps[name].coverage_start == start
+    assert caps[name].derived_from == derived
+    assert caps[name].window_limits is None
 
 
 def test_window_before_coverage_start_is_refused_before_any_lake_call(
@@ -63,6 +75,7 @@ def test_snapshot_with_backfill_takes_a_window_or_none(cne: LakeConfigurer, tmp_
     provider = CnequityProvider(cne_bin=cne(default_lake()))
     window = Window(start=date(2024, 2, 1), end=date(2024, 2, 29))
     with_window = provider.export("index_constituents", window, tmp_path / "a")
+    # The receipt records the request, not a guarantee of complete monthly snapshots.
     assert with_window.window is not None and with_window.window.end == date(2024, 2, 29)
     whole = provider.export("index_constituents", None, tmp_path / "b")
     assert whole.window is None
