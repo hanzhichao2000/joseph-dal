@@ -23,6 +23,10 @@ an exported row for every trading day; missing dates or a window beyond the cale
 A window entirely before the calendar start is wholly unverified. The declaration records the
 calendar's known start, not a measurement of data completeness in the prefix.
 
+The `industry_members` capability is a sparse industry-mapping snapshot: the lake currently has
+only a single EastMoney snapshot and no historical month-end coverage is promised. A window is
+optional and does not imply completeness.
+
 Boundaries:
 
 - The host imports no provider plugin; providers are discovered by entry points.

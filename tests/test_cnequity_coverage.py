@@ -14,6 +14,7 @@ from joseph_dal.protocols import Window
 DATASET_EXPECTATIONS = (
     ("instruments", "snapshot_only", None, None),
     ("index_constituents", "snapshot_with_backfill", None, None),
+    ("industry_members", "snapshot_with_backfill", None, None),
     ("index_bars", "by_date", None, None),
     ("daily_bars", "by_date", None, None),
     ("futures_bars", "by_date", None, None),

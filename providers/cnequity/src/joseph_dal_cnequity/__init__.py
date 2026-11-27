@@ -45,6 +45,8 @@ class DatasetSpec:
 _DATASETS: dict[str, DatasetSpec] = {
     "instruments": DatasetSpec("snapshot_only"),
     "index_constituents": DatasetSpec("snapshot_with_backfill"),
+    # Industry mapping: only a single EastMoney snapshot in the lake; no month-end history claim.
+    "industry_members": DatasetSpec("snapshot_with_backfill"),
     "index_bars": DatasetSpec("by_date"),
     "daily_bars": DatasetSpec("by_date"),
     "futures_bars": DatasetSpec("by_date"),
