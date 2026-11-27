@@ -4,14 +4,8 @@ Data layer for the joseph-* family: a plugin host plus provider plugins. Every r
 revisions (capability, version, source, revision id, digest; receipt plus immutable relative-path
 file list with per-file digests). Engines never call live sources during replay.
 
-Routes (Project `joseph-build` #6):
-
-- **B (options):** `option_contracts` / `option_bars` / `option_greeks` interface design on
-  cnequity (CFE official daily since 2019-12-23). Options strategy notebooks are ad-hoc and live
-  outside this repository.
-- **C (IH daily research):** daily bars, constituents, industry and calendar for joseph-pilot.
-- **A (QT5m):** 5-minute futures bars by contract (akshare/Sina) and CFE daily/contracts
-  (cnequity).
+Providers ship as separate plugins (e.g. `dal-cnequity`). Planning and roadmaps live in the
+project's private tracker.
 
 For cnequity datasets with a declared coverage start, that date is the source data start, not
 an assurance that the calendar verifies all subsequent data. When an export begins before the
@@ -24,8 +18,8 @@ A window entirely before the calendar start is wholly unverified. The declaratio
 calendar's known start, not a measurement of data completeness in the prefix.
 
 The `industry_members` capability is a sparse industry-mapping snapshot: the lake currently has
-only a single EastMoney snapshot and no historical month-end coverage is promised. A window is
-optional and does not imply completeness.
+only a single snapshot and no historical month-end coverage is promised. A window is optional and
+does not imply completeness.
 
 Boundaries:
 
