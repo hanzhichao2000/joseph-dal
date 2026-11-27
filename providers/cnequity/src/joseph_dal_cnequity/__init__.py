@@ -150,15 +150,24 @@ class CnequityProvider:
         if unverified is not None:
             declaration = out_dir / f"{capability}.coverage.json"
             declaration.write_text(
-                json.dumps({"calendar_unverified": {
-                    "start": unverified.start.isoformat(), "end": unverified.end.isoformat()
-                }}, sort_keys=True), encoding="utf-8"
+                json.dumps(
+                    {
+                        "calendar_unverified": {
+                            "start": unverified.start.isoformat(),
+                            "end": unverified.end.isoformat(),
+                        }
+                    },
+                    sort_keys=True,
+                ),
+                encoding="utf-8",
             )
-            files += (RevisionFile(
-                path=declaration.relative_to(out_dir).as_posix(),
-                digest=hashlib.sha256(declaration.read_bytes()).hexdigest(),
-                size=declaration.stat().st_size,
-            ),)
+            files += (
+                RevisionFile(
+                    path=declaration.relative_to(out_dir).as_posix(),
+                    digest=hashlib.sha256(declaration.read_bytes()).hexdigest(),
+                    size=declaration.stat().st_size,
+                ),
+            )
         source = f"cnequity@{self._version()}"
         digest = RevisionRecord.compute_content_digest(capability, _SCHEMA_VERSION, source, files)
         record = RevisionRecord(
@@ -189,7 +198,8 @@ class CnequityProvider:
         checked_start = max(window.start, calendar_start)
         unverified = (
             Window(start=window.start, end=min(window.end, calendar_start - timedelta(days=1)))
-            if window.start < calendar_start else None
+            if window.start < calendar_start
+            else None
         )
         if checked_start > window.end:
             return unverified

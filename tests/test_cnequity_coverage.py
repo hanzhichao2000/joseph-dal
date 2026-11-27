@@ -79,7 +79,9 @@ def test_prefix_is_declared_unverified_in_revision_receipt(
     verify_revision(tmp_path, record)
 
 
-def test_calendar_gap_after_unverified_prefix_is_refused(cne: LakeConfigurer, tmp_path: Path) -> None:
+def test_calendar_gap_after_unverified_prefix_is_refused(
+    cne: LakeConfigurer, tmp_path: Path
+) -> None:
     lake = default_lake()
     lake["calendar"]["first"] = "2023-11-26"
     lake["calendar"]["holes"] = ["2023-12-05"]
