@@ -21,7 +21,12 @@ python3 -m venv "$check_dir/dev"
 ```
 
 The public keyword check runs offline with the checker and publishable wordlist
-vendored from `joseph-docs-public`. Keep the two files in sync with their public source.
+maintained in this repository during rollout. When the public docs source lands,
+record its exact revision before syncing the two files.
+
+Run the checker from a clean checkout to reproduce CI. It reads paths from the
+Git index and content from the working tree. A run with local changes cannot
+verify the staged snapshot.
 
 Build the host and provider wheels, then install and check them in a separate, fresh
 environment outside the source tree.

@@ -19,6 +19,7 @@ jobs:
       - run: python3 -c "import sys; assert sys.version_info >= (3, 11), sys.version"
       - name: Check public boundary
         run: python3 tools/check_keywords.py keywords/public-boundary.txt .
+      - run: python3 -m unittest discover -s tools -p test_check_keywords.py -v
       - run: python3 -m venv .venv
       - run: .venv/bin/pip install -q -e ".[dev]" -e providers/cnequity
       - run: .venv/bin/ruff check src tests providers
