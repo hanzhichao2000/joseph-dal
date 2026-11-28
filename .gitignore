@@ -3,5 +3,5 @@ __pycache__/
 dist/
 build/
 .venv/
-.worktrees/
+# Keep personal worktree exclusions in .git/info/exclude.
 .venv-*/
