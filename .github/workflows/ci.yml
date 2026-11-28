@@ -17,6 +17,8 @@ jobs:
       # No setup-python: the self-hosted runner ships Python 3.12 and its tool cache is per runner.
       # The system Python is externally managed (PEP 668); always work in a venv.
       - run: python3 -c "import sys; assert sys.version_info >= (3, 11), sys.version"
+      - name: Check public boundary
+        run: python3 tools/check_keywords.py keywords/public-boundary.txt .
       - run: python3 -m venv .venv
       - run: .venv/bin/pip install -q -e ".[dev]" -e providers/cnequity
       - run: .venv/bin/ruff check src tests providers

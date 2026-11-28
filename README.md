@@ -4,8 +4,7 @@ Data layer for the joseph-* family: a plugin host plus provider plugins. Every r
 revisions (capability, version, source, revision id, digest; receipt plus immutable relative-path
 file list with per-file digests). Engines never call live sources during replay.
 
-Providers ship as separate plugins (e.g. `dal-cnequity`). Planning and roadmaps live in the
-project's private tracker.
+Providers ship as separate plugins (e.g. `dal-cnequity`).
 
 For cnequity datasets with a declared coverage start, that date is the source data start, not
 an assurance that the calendar verifies all subsequent data. When an export begins before the
@@ -24,7 +23,6 @@ does not imply completeness.
 Boundaries:
 
 - The host imports no provider plugin; providers are discovered by entry points.
-- `dal-tsl` is private (vendor). Margin and commission PIT has no open-source substitute: it is
-  declared, never claimed open.
-- New evidence attaches to GitHub Issues as run manifests; no report trees in this repository.
+- Provider declarations identify the sources available for point-in-time margin and commission data.
+- Keep run manifests and generated reports out of this repository.
 - Public contracts: https://github.com/hanzhichao2000/joseph-docs-public
